@@ -3,7 +3,7 @@ use std::sync::{Mutex, OnceLock};
 use std::vec;
 
 use agent_stream_kit::{
-    ASKit, Agent, AgentConfigs, AgentContext, AgentData, AgentDefinition, AgentError, AgentOutput,
+    ASKit, Agent, AgentConfigs, AgentContext, AgentDefinition, AgentError, AgentOutput, AgentValue,
     AsAgent, AsAgentData, async_trait, new_agent_boxed,
 };
 use cozo::DbInstance;
@@ -60,7 +60,7 @@ impl AsAgent for CozoDbScriptAgent {
         &mut self,
         ctx: AgentContext,
         _pin: String,
-        data: AgentData,
+        value: AgentValue,
     ) -> Result<(), AgentError> {
         let config = self.configs()?;
         let db = get_db_instance(&config.get_string_or_default(CONFIG_DB))?;
@@ -69,7 +69,7 @@ impl AsAgent for CozoDbScriptAgent {
             return Ok(());
         }
 
-        let params: BTreeMap<String, cozo::DataValue> = if let Some(params) = data.as_object() {
+        let params: BTreeMap<String, cozo::DataValue> = if let Some(params) = value.as_object() {
             params
                 .iter()
                 .map(|(k, v)| (k.clone(), v.to_json().into()))
@@ -82,9 +82,9 @@ impl AsAgent for CozoDbScriptAgent {
             .run_script(&script, params, cozo::ScriptMutability::Mutable)
             .map_err(|e| AgentError::IoError(format!("Cozo Error: {}", e)))?;
 
-        let data = AgentData::from_serialize(&result)?;
+        let value = AgentValue::from_serialize(&result)?;
 
-        self.try_output(ctx, PORT_RESULT, data)
+        self.try_output(ctx, PORT_RESULT, value)
     }
 }
 
