@@ -11,20 +11,21 @@ static DB_MAP: OnceLock<Mutex<BTreeMap<String, DbInstance>>> = OnceLock::new();
 
 static CATEGORY: &str = "CozoDB";
 
-static PORT_PARAMS: &str = "params";
-static PORT_RESULT: &str = "result";
+static PORT_ARRAY: &str = "array";
+static PORT_KV: &str = "kv";
+static PORT_VALUE: &str = "value";
+static PORT_TABLE: &str = "table";
 
 static CONFIG_DB: &str = "db";
 static CONFIG_SCRIPT: &str = "script";
 
-// CozoDB Script
 #[askit_agent(
     title = "CozoDB Script",
     category = CATEGORY,
-    inputs = [PORT_PARAMS],
-    outputs = [PORT_RESULT],
-    string_config(name = CONFIG_DB, title = "Database"),
-    text_config(name = CONFIG_SCRIPT, title = "Script")
+    inputs = [PORT_KV, PORT_VALUE],
+    outputs = [PORT_TABLE],
+    string_config(name = CONFIG_DB),
+    text_config(name = CONFIG_SCRIPT)
 )]
 struct CozoDbScriptAgent {
     data: AgentData,
@@ -41,7 +42,7 @@ impl AsAgent for CozoDbScriptAgent {
     async fn process(
         &mut self,
         ctx: AgentContext,
-        _pin: String,
+        pin: String,
         value: AgentValue,
     ) -> Result<(), AgentError> {
         let config = self.configs()?;
@@ -51,14 +52,20 @@ impl AsAgent for CozoDbScriptAgent {
             return Ok(());
         }
 
-        let params: BTreeMap<String, cozo::DataValue> = if let Some(params) = value.as_object() {
-            params
-                .iter()
-                .map(|(k, v)| (k.clone(), v.to_json().into()))
-                .collect()
-        } else {
-            BTreeMap::new()
-        };
+        let mut params: BTreeMap<String, cozo::DataValue> = BTreeMap::new();
+        if pin == PORT_KV {
+            if let Some(kv) = value.as_object() {
+                for (k, v) in kv {
+                    params.insert(k.clone(), v.to_json().into());
+                }
+            } else {
+                return Err(AgentError::InvalidValue(
+                    "Expected object for KV input".to_string(),
+                ));
+            };
+        } else if pin == PORT_VALUE {
+            params.insert("value".to_string(), value.to_json().into());
+        }
 
         let result = db
             .run_script(&script, params, cozo::ScriptMutability::Mutable)
@@ -66,7 +73,7 @@ impl AsAgent for CozoDbScriptAgent {
 
         let value = named_rows_to_agent_value(result);
 
-        self.try_output(ctx, PORT_RESULT, value)
+        self.try_output(ctx, PORT_TABLE, value)
     }
 }
 
@@ -88,6 +95,147 @@ fn get_db_instance(path: &str) -> Result<DbInstance, AgentError> {
     map_guard.insert(path.to_string(), db.clone());
 
     Ok(db)
+}
+
+#[askit_agent(
+    title = "Rows",
+    category = CATEGORY,
+    inputs = [PORT_TABLE],
+    outputs = [PORT_ARRAY],
+)]
+struct RowsAgent {
+    data: AgentData,
+}
+
+#[async_trait]
+impl AsAgent for RowsAgent {
+    fn new(askit: ASKit, id: String, spec: AgentSpec) -> Result<Self, AgentError> {
+        Ok(Self {
+            data: AgentData::new(askit, id, spec),
+        })
+    }
+
+    async fn process(
+        &mut self,
+        ctx: AgentContext,
+        _pin: String,
+        value: AgentValue,
+    ) -> Result<(), AgentError> {
+        let rows = value
+            .get_array("rows")
+            .ok_or_else(|| AgentError::InvalidValue("Missing 'rows' field".to_string()))?;
+        self.try_output(ctx, PORT_ARRAY, AgentValue::array(rows.clone()))
+    }
+}
+
+#[askit_agent(
+    title = "Row",
+    category = CATEGORY,
+    inputs = [PORT_TABLE],
+    outputs = [PORT_ARRAY],
+    integer_config(name = "index"),
+)]
+struct RowAgent {
+    data: AgentData,
+}
+
+#[async_trait]
+impl AsAgent for RowAgent {
+    fn new(askit: ASKit, id: String, spec: AgentSpec) -> Result<Self, AgentError> {
+        Ok(Self {
+            data: AgentData::new(askit, id, spec),
+        })
+    }
+
+    async fn process(
+        &mut self,
+        ctx: AgentContext,
+        _pin: String,
+        value: AgentValue,
+    ) -> Result<(), AgentError> {
+        let index = self.configs()?.get_integer("index")? as usize;
+        let row = value
+            .get_array("rows")
+            .ok_or_else(|| AgentError::InvalidValue("Missing 'rows' field".to_string()))?
+            .get(index)
+            .ok_or_else(|| {
+                AgentError::InvalidValue(format!("Row index {} out of bounds", index))
+            })?;
+        self.try_output(ctx, PORT_ARRAY, row.clone())
+    }
+}
+
+#[askit_agent(
+    title = "Select",
+    category = CATEGORY,
+    inputs = [PORT_TABLE],
+    outputs = [PORT_ARRAY],
+    string_config(name = "cols"),
+)]
+struct SelectAgent {
+    data: AgentData,
+}
+
+#[async_trait]
+impl AsAgent for SelectAgent {
+    fn new(askit: ASKit, id: String, spec: AgentSpec) -> Result<Self, AgentError> {
+        Ok(Self {
+            data: AgentData::new(askit, id, spec),
+        })
+    }
+
+    async fn process(
+        &mut self,
+        ctx: AgentContext,
+        _pin: String,
+        value: AgentValue,
+    ) -> Result<(), AgentError> {
+        let cols = self
+            .configs()?
+            .get_string("cols")?
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .collect::<Vec<String>>();
+        let headers = value
+            .get_array("headers")
+            .ok_or_else(|| AgentError::InvalidValue("Missing 'headers' field".to_string()))?;
+        let col_indices: Vec<usize> = cols
+            .iter()
+            .map(|col| {
+                headers
+                    .iter()
+                    .position(|h| h.as_str().map_or(false, |hs| hs == col))
+                    .ok_or_else(|| AgentError::InvalidValue(format!("Column '{}' not found", col)))
+            })
+            .collect::<Result<Vec<usize>, AgentError>>()?;
+
+        let arr = value
+            .get_array("rows")
+            .ok_or_else(|| AgentError::InvalidValue("Missing 'rows' field".to_string()))?
+            .iter()
+            .map(|row| {
+                let row_array = row
+                    .as_array()
+                    .ok_or_else(|| AgentError::InvalidValue("Row is not an array".to_string()))?;
+                let selected_cells: Vec<AgentValue> = col_indices
+                    .iter()
+                    .map(|&i| {
+                        row_array
+                            .get(i)
+                            .cloned()
+                            .unwrap_or_else(|| AgentValue::unit())
+                    })
+                    .collect();
+                Ok(AgentValue::array(selected_cells))
+            })
+            .collect::<Result<Vec<AgentValue>, AgentError>>()?;
+
+        if arr.len() == 1 {
+            self.try_output(ctx, PORT_ARRAY, arr[0].clone())
+        } else {
+            self.try_output(ctx, PORT_ARRAY, AgentValue::array(arr))
+        }
+    }
 }
 
 fn data_value_to_agent_value(value: DataValue) -> AgentValue {
