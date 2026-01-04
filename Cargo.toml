@@ -1,13 +1,13 @@
 [package]
 name = "askit-cozodb-agents"
-version = "0.3.1"
+version = "0.4.0"
 description = "Cozo Agents for Agent Stream Kit"
 authors = ["Akira Ishino <akira@lumilab.jp>"]
 edition = "2024"
 license = "Apache-2.0 OR MIT"
 
 [dependencies]
-agent-stream-kit = "0.17.0"
+agent-stream-kit = "0.18.0"
 cozo = "0.7.6"
 im = "15.1.0"
 rayon = { version = "~1.10" } # https://github.com/cozodb/cozo/issues/298
@@ -16,4 +16,3 @@ serde_json = "1"
 
 # [patch.crates-io]
 # agent-stream-kit = { path = "../agent-stream-kit/agent-stream-kit" }
-# askit-macros = { path = "../agent-stream-kit/askit-macros" }
