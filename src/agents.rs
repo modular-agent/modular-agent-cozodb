@@ -74,7 +74,7 @@ impl AsAgent for CozoDbScriptAgent {
 
         let value = named_rows_to_agent_value(result);
 
-        self.try_output(ctx, PORT_TABLE, value)
+        self.output(ctx, PORT_TABLE, value).await
     }
 }
 
@@ -125,7 +125,7 @@ impl AsAgent for RowsAgent {
         let rows = value
             .get_array("rows")
             .ok_or_else(|| AgentError::InvalidValue("Missing 'rows' field".to_string()))?;
-        self.try_output(ctx, PORT_ARRAY, AgentValue::array(rows.clone()))
+        self.output(ctx, PORT_ARRAY, AgentValue::array(rows.clone())).await
     }
 }
 
@@ -162,7 +162,7 @@ impl AsAgent for RowAgent {
             .ok_or_else(|| {
                 AgentError::InvalidValue(format!("Row index {} out of bounds", index))
             })?;
-        self.try_output(ctx, PORT_ARRAY, row.clone())
+        self.output(ctx, PORT_ARRAY, row.clone()).await
     }
 }
 
@@ -232,9 +232,9 @@ impl AsAgent for SelectAgent {
             .collect::<Result<im::Vector<AgentValue>, AgentError>>()?;
 
         if arr.len() == 1 {
-            self.try_output(ctx, PORT_ARRAY, arr[0].clone())
+            self.output(ctx, PORT_ARRAY, arr[0].clone()).await
         } else {
-            self.try_output(ctx, PORT_ARRAY, AgentValue::array(arr))
+            self.output(ctx, PORT_ARRAY, AgentValue::array(arr)).await
         }
     }
 }
