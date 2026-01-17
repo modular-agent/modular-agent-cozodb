@@ -11,6 +11,7 @@ static CONFIG_TABLE: &str = "table";
 
 // CozoDB Display Table
 #[askit_agent(
+    kind = "Display",
     title = "Display Table",
     category = CATEGORY,
     inputs = [PORT_TABLE],
