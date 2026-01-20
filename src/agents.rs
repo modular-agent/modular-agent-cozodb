@@ -10,7 +10,7 @@ use im::hashmap;
 
 static DB_MAP: OnceLock<Mutex<BTreeMap<String, DbInstance>>> = OnceLock::new();
 
-static CATEGORY: &str = "CozoDB";
+static CATEGORY: &str = "DB/CozoDB";
 
 static PORT_ARRAY: &str = "array";
 static PORT_KV: &str = "kv";
@@ -125,7 +125,8 @@ impl AsAgent for RowsAgent {
         let rows = value
             .get_array("rows")
             .ok_or_else(|| AgentError::InvalidValue("Missing 'rows' field".to_string()))?;
-        self.output(ctx, PORT_ARRAY, AgentValue::array(rows.clone())).await
+        self.output(ctx, PORT_ARRAY, AgentValue::array(rows.clone()))
+            .await
     }
 }
 

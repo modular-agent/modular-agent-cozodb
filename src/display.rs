@@ -3,7 +3,7 @@ use agent_stream_kit::{
     askit_agent, async_trait,
 };
 
-static CATEGORY: &str = "CozoDB";
+static CATEGORY: &str = "DB/CozoDB";
 
 static PORT_TABLE: &str = "table";
 
