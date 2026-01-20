@@ -1,6 +1,6 @@
-use agent_stream_kit::{
-    ASKit, AgentContext, AgentData, AgentError, AgentOutput, AgentSpec, AgentValue, AsAgent,
-    askit_agent, async_trait,
+use modular_agent_kit::{
+    MAK, AgentContext, AgentData, AgentError, AgentOutput, AgentSpec, AgentValue, AsAgent,
+    mak_agent, async_trait,
 };
 
 static CATEGORY: &str = "DB/CozoDB";
@@ -10,7 +10,7 @@ static PORT_TABLE: &str = "table";
 static CONFIG_TABLE: &str = "table";
 
 // CozoDB Display Table
-#[askit_agent(
+#[mak_agent(
     kind = "Display",
     title = "Display Table",
     category = CATEGORY,
@@ -29,16 +29,16 @@ struct DisplayTableAgent {
 
 #[async_trait]
 impl AsAgent for DisplayTableAgent {
-    fn new(askit: ASKit, id: String, spec: AgentSpec) -> Result<Self, AgentError> {
+    fn new(mak: MAK, id: String, spec: AgentSpec) -> Result<Self, AgentError> {
         Ok(Self {
-            data: AgentData::new(askit, id, spec),
+            data: AgentData::new(mak, id, spec),
         })
     }
 
     async fn process(
         &mut self,
         _ctx: AgentContext,
-        _pin: String,
+        _port: String,
         value: AgentValue,
     ) -> Result<(), AgentError> {
         let headers = value.get_array("headers");

@@ -1,9 +1,9 @@
 use std::collections::BTreeMap;
 use std::sync::{Mutex, OnceLock};
 
-use agent_stream_kit::{
-    ASKit, Agent, AgentContext, AgentData, AgentError, AgentOutput, AgentSpec, AgentValue, AsAgent,
-    askit_agent, async_trait,
+use modular_agent_kit::{
+    MAK, Agent, AgentContext, AgentData, AgentError, AgentOutput, AgentSpec, AgentValue, AsAgent,
+    mak_agent, async_trait,
 };
 use cozo::{DataValue, DbInstance, JsonData, NamedRows, Num, UuidWrapper, Vector};
 use im::hashmap;
@@ -20,7 +20,7 @@ static PORT_TABLE: &str = "table";
 static CONFIG_DB: &str = "db";
 static CONFIG_SCRIPT: &str = "script";
 
-#[askit_agent(
+#[mak_agent(
     title = "CozoDB Script",
     category = CATEGORY,
     inputs = [PORT_KV, PORT_VALUE],
@@ -34,16 +34,16 @@ struct CozoDbScriptAgent {
 
 #[async_trait]
 impl AsAgent for CozoDbScriptAgent {
-    fn new(askit: ASKit, id: String, spec: AgentSpec) -> Result<Self, AgentError> {
+    fn new(mak: MAK, id: String, spec: AgentSpec) -> Result<Self, AgentError> {
         Ok(Self {
-            data: AgentData::new(askit, id, spec),
+            data: AgentData::new(mak, id, spec),
         })
     }
 
     async fn process(
         &mut self,
         ctx: AgentContext,
-        pin: String,
+        port: String,
         value: AgentValue,
     ) -> Result<(), AgentError> {
         let config = self.configs()?;
@@ -54,7 +54,7 @@ impl AsAgent for CozoDbScriptAgent {
         }
 
         let mut params: BTreeMap<String, cozo::DataValue> = BTreeMap::new();
-        if pin == PORT_KV {
+        if port == PORT_KV {
             if let Some(kv) = value.as_object() {
                 for (k, v) in kv {
                     params.insert(k.clone(), v.to_json().into());
@@ -64,7 +64,7 @@ impl AsAgent for CozoDbScriptAgent {
                     "Expected object for KV input".to_string(),
                 ));
             };
-        } else if pin == PORT_VALUE {
+        } else if port == PORT_VALUE {
             params.insert("value".to_string(), value.to_json().into());
         }
 
@@ -98,7 +98,7 @@ fn get_db_instance(path: &str) -> Result<DbInstance, AgentError> {
     Ok(db)
 }
 
-#[askit_agent(
+#[mak_agent(
     title = "Rows",
     category = CATEGORY,
     inputs = [PORT_TABLE],
@@ -110,16 +110,16 @@ struct RowsAgent {
 
 #[async_trait]
 impl AsAgent for RowsAgent {
-    fn new(askit: ASKit, id: String, spec: AgentSpec) -> Result<Self, AgentError> {
+    fn new(mak: MAK, id: String, spec: AgentSpec) -> Result<Self, AgentError> {
         Ok(Self {
-            data: AgentData::new(askit, id, spec),
+            data: AgentData::new(mak, id, spec),
         })
     }
 
     async fn process(
         &mut self,
         ctx: AgentContext,
-        _pin: String,
+        _port: String,
         value: AgentValue,
     ) -> Result<(), AgentError> {
         let rows = value
@@ -130,7 +130,7 @@ impl AsAgent for RowsAgent {
     }
 }
 
-#[askit_agent(
+#[mak_agent(
     title = "Row",
     category = CATEGORY,
     inputs = [PORT_TABLE],
@@ -143,16 +143,16 @@ struct RowAgent {
 
 #[async_trait]
 impl AsAgent for RowAgent {
-    fn new(askit: ASKit, id: String, spec: AgentSpec) -> Result<Self, AgentError> {
+    fn new(mak: MAK, id: String, spec: AgentSpec) -> Result<Self, AgentError> {
         Ok(Self {
-            data: AgentData::new(askit, id, spec),
+            data: AgentData::new(mak, id, spec),
         })
     }
 
     async fn process(
         &mut self,
         ctx: AgentContext,
-        _pin: String,
+        _port: String,
         value: AgentValue,
     ) -> Result<(), AgentError> {
         let index = self.configs()?.get_integer("index")? as usize;
@@ -167,7 +167,7 @@ impl AsAgent for RowAgent {
     }
 }
 
-#[askit_agent(
+#[mak_agent(
     title = "Select",
     category = CATEGORY,
     inputs = [PORT_TABLE],
@@ -180,16 +180,16 @@ struct SelectAgent {
 
 #[async_trait]
 impl AsAgent for SelectAgent {
-    fn new(askit: ASKit, id: String, spec: AgentSpec) -> Result<Self, AgentError> {
+    fn new(mak: MAK, id: String, spec: AgentSpec) -> Result<Self, AgentError> {
         Ok(Self {
-            data: AgentData::new(askit, id, spec),
+            data: AgentData::new(mak, id, spec),
         })
     }
 
     async fn process(
         &mut self,
         ctx: AgentContext,
-        _pin: String,
+        _port: String,
         value: AgentValue,
     ) -> Result<(), AgentError> {
         let cols = self
