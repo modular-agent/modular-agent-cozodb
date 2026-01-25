@@ -1,12 +1,12 @@
 use std::collections::BTreeMap;
 use std::sync::{Mutex, OnceLock};
 
-use modular_agent_kit::{
-    MAK, Agent, AgentContext, AgentData, AgentError, AgentOutput, AgentSpec, AgentValue, AsAgent,
-    mak_agent, async_trait,
-};
 use cozo::{DataValue, DbInstance, JsonData, NamedRows, Num, UuidWrapper, Vector};
 use im::hashmap;
+use modular_agent_kit::{
+    Agent, AgentContext, AgentData, AgentError, AgentOutput, AgentSpec, AgentValue, AsAgent, MAK,
+    async_trait, modular_agent,
+};
 
 static DB_MAP: OnceLock<Mutex<BTreeMap<String, DbInstance>>> = OnceLock::new();
 
@@ -20,7 +20,7 @@ static PORT_TABLE: &str = "table";
 static CONFIG_DB: &str = "db";
 static CONFIG_SCRIPT: &str = "script";
 
-#[mak_agent(
+#[modular_agent(
     title = "CozoDB Script",
     category = CATEGORY,
     inputs = [PORT_KV, PORT_VALUE],
@@ -98,7 +98,7 @@ fn get_db_instance(path: &str) -> Result<DbInstance, AgentError> {
     Ok(db)
 }
 
-#[mak_agent(
+#[modular_agent(
     title = "Rows",
     category = CATEGORY,
     inputs = [PORT_TABLE],
@@ -130,7 +130,7 @@ impl AsAgent for RowsAgent {
     }
 }
 
-#[mak_agent(
+#[modular_agent(
     title = "Row",
     category = CATEGORY,
     inputs = [PORT_TABLE],
@@ -167,7 +167,7 @@ impl AsAgent for RowAgent {
     }
 }
 
-#[mak_agent(
+#[modular_agent(
     title = "Select",
     category = CATEGORY,
     inputs = [PORT_TABLE],

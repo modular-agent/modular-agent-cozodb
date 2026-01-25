@@ -1,13 +1,13 @@
 [package]
-name = "mak-cozodb-agents"
-version = "0.6.0"
+name = "modular-agent-cozodb"
+version = "0.7.0"
 description = "Cozo Agents for Modular Agent Kit"
 authors = ["Akira Ishino <akira@lumilab.jp>"]
 edition = "2024"
 license = "Apache-2.0 OR MIT"
 
 [dependencies]
-modular-agent-kit = "0.20.0"
+modular-agent-kit = "0.21.0"
 cozo = "0.7.6"
 im = "15.1.0"
 rayon = { version = "~1.10" } # https://github.com/cozodb/cozo/issues/298
