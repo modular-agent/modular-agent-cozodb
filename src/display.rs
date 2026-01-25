@@ -1,6 +1,6 @@
 use modular_agent_kit::{
-    MAK, AgentContext, AgentData, AgentError, AgentOutput, AgentSpec, AgentValue, AsAgent,
-    mak_agent, async_trait,
+    AgentContext, AgentData, AgentError, AgentOutput, AgentSpec, AgentValue, AsAgent, MAK,
+    async_trait, modular_agent,
 };
 
 static CATEGORY: &str = "DB/CozoDB";
@@ -10,7 +10,7 @@ static PORT_TABLE: &str = "table";
 static CONFIG_TABLE: &str = "table";
 
 // CozoDB Display Table
-#[mak_agent(
+#[modular_agent(
     kind = "Display",
     title = "Display Table",
     category = CATEGORY,
