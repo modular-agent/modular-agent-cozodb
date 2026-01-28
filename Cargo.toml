@@ -1,13 +1,13 @@
 [package]
 name = "modular-agent-cozodb"
-version = "0.7.0"
-description = "Cozo Agents for Modular Agent Kit"
+version = "0.8.0"
+description = "Cozo Agents for Modular Agent"
 authors = ["Akira Ishino <akira@lumilab.jp>"]
 edition = "2024"
 license = "Apache-2.0 OR MIT"
 
 [dependencies]
-modular-agent-kit = "0.21.0"
+modular-agent-core = "0.22.0"
 cozo = "0.7.6"
 im = "15.1.0"
 rayon = { version = "~1.10" } # https://github.com/cozodb/cozo/issues/298
@@ -15,4 +15,4 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
 # [patch.crates-io]
-# modular-agent-kit = { path = "../modular-agent-kit/modular-agent-kit" }
+# modular-agent-core = { path = "../modular-agent-core/modular-agent-core" }

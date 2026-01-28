@@ -1,1 +1,1 @@
-# CozoDB Agents for Modular Agent Kit
+# CozoDB Agents for Modular Agent
